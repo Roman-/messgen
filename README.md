@@ -1,6 +1,11 @@
 ![JS CI](https://github.com/pavletto/messgen/actions/workflows/js.yml/badge.svg)
 ![CPP CI](https://github.com/pavletto/messgen/actions/workflows/cpp.yml/badge.svg)
 
+# THE PROJECT IS MOVED
+
+This repository contains old version of messgen, "v0", that is discontinued.
+New version (v1), that is better adapted for usage for high frequency trading (while still can be used on embedded systems) moved to [github.com/Alber-Blanc/messgen](https://github.com/Alber-Blanc/messgen).
+
 # Messgen
 
 Lightweight and fast message serialization library.
