@@ -52,6 +52,21 @@ class MdGenerator:
         self._modules_map = modules_map
         self._data_types_map = data_types_map
 
+    def _get_free_id_list(self, module, free_ids_cnt=5):
+        msg_ids = sorted(msg["id"] for msg in module["messages"])
+        free_ids = []
+        last_id = 0
+        for mid in msg_ids:
+            if mid - last_id > 0:
+                free_ids.extend(range(last_id + 1, mid))
+            last_id = mid
+
+        if len(free_ids) < free_ids_cnt:
+            needed = free_ids_cnt - len(free_ids)
+            free_ids.extend(range(last_id + 1, last_id + needed + 1))
+
+        return free_ids[:free_ids_cnt]
+
     def generate(self, out_dir):
         for module_name, module in self._modules_map.items():
 
@@ -92,6 +107,12 @@ class MdGenerator:
                     )
                 )
             dts.append("")
+            free_ids = self._get_free_id_list(module, 5)
+            if free_ids:
+                dts.append(
+                    "Next available message IDs: %s" % ", ".join(str(i) for i in free_ids)
+                )
+                dts.append("")
 
             for msg in module["messages"]:
                 dts.extend(self.generate_interface(msg))
