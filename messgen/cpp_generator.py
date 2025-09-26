@@ -265,6 +265,16 @@ class CppGenerator:
         self._data_types_map = data_types_map
         self._variables = variables
 
+        self._messages_by_type = {}
+        for module_name, module in modules_map.items():
+            for message in module["messages"]:
+                typename = message["typename"]
+                message_path = f"{module_name}/{message['name']}"
+                self._messages_by_type[typename] = {
+                    "id": message["id"],
+                    "path": message_path,
+                }
+
         self._indent_cnt = 0
         self._indent = ""
         self._code = []
@@ -273,6 +283,8 @@ class CppGenerator:
             self._json_generator = JsonGenerator(modules_map, data_types_map, module_sep, variables)
 
     def generate(self, out_dir):
+        self.__validate_message_dependencies()
+
         for module_name, module in self._modules_map.items():
             module_out_dir = out_dir + os.path.sep + module["namespace"].replace(self.MODULE_SEP, os.path.sep)
 
@@ -325,6 +337,23 @@ class CppGenerator:
             constants_file = generate_constants_file(namespace, constants)
             constants_fpath = module_out_dir + os.path.sep + "constants.h"
             write_code_file(constants_fpath, constants_file)
+
+    def __validate_message_dependencies(self):
+        for module_name, module in self._modules_map.items():
+            for message in module["messages"]:
+                message_id = message["id"]
+                message_path = f"{module_name}/{message['name']}"
+
+                for field in message.get("fields", []):
+                    dep_info = self._messages_by_type.get(field["type"])
+                    if dep_info is None:
+                        continue
+
+                    if dep_info["id"] > message_id:
+                        raise MessgenException(
+                            "Message %s (id %d) depends on %s (id %d) which has after it."
+                            % (message_path, message_id, dep_info["path"], dep_info["id"])
+                        )
 
     def __generate_message_header(self, namespace, message):
         self.reset()
