@@ -2,7 +2,6 @@
 
 import argparse
 
-import os
 from messgen.go_generator import GoGenerator
 from messgen.json_generator import JsonGenerator
 from messgen.ts_generator import TsGenerator
@@ -39,71 +38,6 @@ PLAIN_TYPES = {
 SPECIAL_TYPES = {
     "string": {"size": 1, "align": 1}
 }
-
-
-def __get_free_id_list(module, free_ids_cnt):
-    module_msg_ids = []
-    for msg in module["messages"]:
-        module_msg_ids.append(msg["id"])
-
-    module_msg_ids.sort()
-
-    free_ids = []
-    last_id = 0
-    for id in module_msg_ids:
-        if id - last_id > 0:
-            free_ids.extend(range(last_id+1, id))
-
-        last_id = id
-
-    if len(free_ids) < free_ids_cnt:
-        d = free_ids_cnt - len(free_ids)
-        free_ids.extend(range(module_msg_ids[-1] + 1, module_msg_ids[-1] + d + 1))
-    else:
-        free_ids = free_ids[:free_ids_cnt]
-
-    return free_ids
-
-
-def __dump_datatypes(modules_map, datatypes_map, free_ids_cnt=10):
-    dump = ""
-
-    for module_name, module_obj in modules_map.items():
-        free_ids = __get_free_id_list(module_obj, free_ids_cnt)
-        dump += ("%s free ids list: %s" % (module_name, str(free_ids))) + os.linesep
-
-    dump += os.linesep
-
-    for typename, datatype in datatypes_map.items():
-        dump += "****************" + os.linesep
-        dump += typename + os.linesep
-
-        if datatype["plain"]:
-            continue
-
-        for field in datatype["fields"]:
-            dump += "\t\t" + field["type"] + " " + field["name"] + ": "
-            if field["is_array"]:
-                if field["is_dynamic"]:
-                    dump += "[]"
-                else:
-                    dump += ("[%d]" % field["num"])
-
-            dump += os.linesep
-
-        # type_info = message["type_info"]
-        dump += "\t\tAlignment: " + str(datatype["align"]) + os.linesep
-        dump += "\t\tStatic size: " + str(datatype["static_size"]) + os.linesep
-
-        dump += "\t\tDepends:" + os.linesep
-        for dep in datatype["deps"]:
-            dump += ("\t\t\t" + dep) + os.linesep
-
-        dump += os.linesep + os.linesep
-
-    return dump
-
-
 def main():
     parser = argparse.ArgumentParser(description='Message generator.')
     parser.add_argument("-b", "--basedirs", required=True, type=str, nargs="+",
@@ -130,8 +64,6 @@ def main():
 
         data_types_preprocessor = DataTypesPreprocessor(PLAIN_TYPES, SPECIAL_TYPES)
         data_types_map = data_types_preprocessor.create_types_map(modules_map)
-        with open("dump.txt", "w+") as f:
-            f.write(__dump_datatypes(modules_map, data_types_map))
 
         g_type = generators.get(args.lang)
         if g_type is None:
