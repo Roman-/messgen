@@ -24,7 +24,9 @@ template<typename T>
 struct Serializer<Dynamic<T, true>> {
     static size_t serialize(uint8_t* buf, const Dynamic<T, true>& dynamic) {
         auto bytes = dynamic.size * sizeof(T);
-        std::memcpy(buf, dynamic.ptr, bytes);
+        if (bytes > 0) {
+            std::memcpy(buf, dynamic.ptr, bytes);
+        }
         return bytes;
     }
 };
@@ -47,7 +49,9 @@ template<typename T>
 struct Parser<Dynamic<T, true>> {
     static size_t parse(const uint8_t* buf, uint32_t, MemoryAllocator&, Dynamic<T, true>& dynamic) {
         auto bytes = dynamic.size * sizeof(T);
-        memcpy(dynamic.ptr, buf, bytes);
+        if (bytes > 0) {
+            memcpy(dynamic.ptr, buf, bytes);
+        }
         return bytes;
     }
 };
