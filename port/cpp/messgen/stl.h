@@ -17,10 +17,10 @@ class DynamicMemoryAllocator {
 public:
     explicit DynamicMemoryAllocator(size_t size) :
             _memory(size),
-            _alloc(&_memory[0], _memory.size()) {}
+            _alloc(_memory.data(), _memory.size()) {}
 
     operator MemoryAllocator &() noexcept {
-        _alloc = MemoryAllocator(&_memory[0], _memory.size());
+        _alloc = MemoryAllocator(_memory.data(), _memory.size());
         return _alloc;
     }
 
@@ -50,7 +50,7 @@ int serialize(const T &msg, std::vector<uint8_t> &buf) {
     }
 
     buf.resize(total_size);
-    int res = messgen::serialize(msg, &buf[initial_size], serialized_size);
+    int res = messgen::serialize(msg, buf.data() + initial_size, serialized_size);
     if (res == -1) {
         buf.resize(initial_size);
     }
@@ -62,7 +62,7 @@ int serialize(const T &msg, std::vector<uint8_t> &buf) {
  * @brief Helper wrapper around std::vector. See messgen.h get_message_info().
  */
 inline int get_message_info(const std::vector<uint8_t> &buf, MessageInfo &info) {
-    return messgen::get_message_info(&buf[0], buf.size(), info);
+    return messgen::get_message_info(buf.data(), buf.size(), info);
 }
 
 /**
@@ -70,7 +70,7 @@ inline int get_message_info(const std::vector<uint8_t> &buf, MessageInfo &info) 
  */
 template<class F>
 size_t for_each_message(const std::vector<uint8_t> &payload, F f) {
-    return messgen::for_each_message(&payload[0], payload.size(), f);
+    return messgen::for_each_message(payload.data(), payload.size(), f);
 }
 
 /**
@@ -91,7 +91,7 @@ Dynamic <T> make_dynamic(std::vector<T> &vec) {
  * @return  Memory allocator object
  */
 inline MemoryAllocator make_memory_allocator(std::vector<uint8_t> &vec) {
-    return MemoryAllocator(&vec[0], vec.capacity());
+    return MemoryAllocator(vec.data(), vec.capacity());
 }
 
 }

@@ -110,6 +110,9 @@ size_t for_each_message(const uint8_t *data, size_t data_size, F& f) {
         f(msg_info);
 
         const auto total_size = msg_info.get_total_size();
+        if (total_size > remaining) {
+            break;
+        }
         buf += total_size;
         remaining -= total_size;
     }

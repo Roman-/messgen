@@ -23,6 +23,9 @@ public:
             return reinterpret_cast<T *>(_mem_start);
         }
 
+        if (num > _size / sizeof(T)) {
+            return nullptr;
+        }
         const size_t alloc_size = sizeof(T) * num;
         if (align(alignof(T), alloc_size, _mem_start, _size)) {
             T *ptr = reinterpret_cast<T *>(_mem_start);
