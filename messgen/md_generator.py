@@ -107,7 +107,7 @@ class MdGenerator:
                     )
                 )
             dts.append("")
-            free_ids = self._get_free_id_list(module, 5)
+            free_ids = self._get_free_id_list(module, 10)
             if free_ids:
                 dts.append(
                     "Next available message IDs: %s" % ", ".join(str(i) for i in free_ids)
