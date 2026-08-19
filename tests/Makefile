@@ -9,9 +9,12 @@ CPP_HEADERS := ${wildcard cpp/*.h} ${wildcard cpp/super/duper/project/*.h} ${wil
 CPP_SOURCES := ${wildcard cpp/*.cpp} ${wildcard cpp/super/duper/project/*.cpp} ${wildcard cpp/messgen/msgs/messgen_test/*.cpp}
 CPP_OBJECTS := ${CPP_SOURCES:.cpp=.o}
 
-.PHONY: all cpp_tests_run messages clean
+.PHONY: all python_tests_run cpp_tests_run messages clean
 
-all: cpp_tests_run
+all: python_tests_run cpp_tests_run
+
+python_tests_run:
+	python3 -m unittest discover -s python
 
 messages: .done.messages
 .done.messages: $(MESSAGES_YAML)

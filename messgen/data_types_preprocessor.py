@@ -60,11 +60,15 @@ class DataTypesPreprocessor:
         self.__create_lookup_messages_set(modules_map)
         self.__load_constants(modules_map)
 
-        max_datatype_size = 0
-
         for module_name, module in modules_map.items():
             module_ns = DataTypesPreprocessor.__create_namespace(module_name)
             module["namespace"] = module_ns
+
+            # Counted per module: it used to accumulate across every module of the
+            # invocation, which made a module's "max_datatype_size" (and hence its
+            # protocol version, see VersionProtocol) depend on unrelated modules
+            # listed before it on the command line.
+            max_datatype_size = 0
 
             for data_type in module["messages"]:
                 typename = self.__normalize_typename(module_name, data_type["name"])
