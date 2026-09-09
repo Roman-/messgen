@@ -9,7 +9,10 @@ import json
 #                         to accumulate across every module of a single generator
 #                         invocation, which made each protocol version depend on the
 #                         yaml of the unrelated protocols listed before it.
-IGNORED_KEYS = frozenset(("descr", "max_datatype_size"))
+#   "generate_protocol_version" - says whether the stamp is emitted at all, not what
+#                         the peers put on the wire. Spelling out the default in a
+#                         _protocol.yaml must leave the stamp where it was.
+IGNORED_KEYS = frozenset(("descr", "max_datatype_size", "generate_protocol_version"))
 
 
 def _sanitize(obj):

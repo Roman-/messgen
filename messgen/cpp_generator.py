@@ -1,6 +1,7 @@
 import os
 from .messgen_ex import MessgenException
 from .json_generator import JsonGenerator
+from .parser import GENERATE_PROTOCOL_VERSION
 from .version_protocol import VersionProtocol
 
 PROTO_ID_VAR_TYPE = "uint8_t"
@@ -185,10 +186,17 @@ def generate_proto_file(namespace, module, modules_map):
     proto_id = module["proto_id"]
     max_msg_size = module["max_datatype_size"]
 
+    struct_version = []
+    proto_version = []
+    if module[GENERATE_PROTOCOL_VERSION]:
+        version = VersionProtocol(module).generate()
+        struct_version = ["    static constexpr const char* VERSION = \"%s\";" % version]
+        proto_version = ["static constexpr const char* PROTO_VERSION = \"%s\";" % version]
+
     struct = ["struct ProtoInfo {",
               "    static constexpr %s ID = %d;" % (PROTO_ID_VAR_TYPE, proto_id),
               "    static constexpr %s MAX_MESSAGE_SIZE = %d;" % (PROTO_MAX_MESSAGE_SIZE_TYPE, max_msg_size),
-              "    static constexpr const char* VERSION = \"%s\";" % (VersionProtocol(module).generate()),
+              *struct_version,
               "};"]
 
     code = [
@@ -200,7 +208,7 @@ def generate_proto_file(namespace, module, modules_map):
         "",
         "static constexpr %s PROTO_ID = %d;" % (PROTO_ID_VAR_TYPE, proto_id),
         "static constexpr %s PROTO_MAX_MESSAGE_SIZE = %d;" % (PROTO_MAX_MESSAGE_SIZE_TYPE, max_msg_size),
-        "static constexpr const char* PROTO_VERSION = \"%s\";" % (VersionProtocol(module).generate()),
+        *proto_version,
         "",
         *close_namespace(namespace)
     ]

@@ -43,6 +43,21 @@ Each protocol should be placed in directory `base_dir/vendor/protocol`.
 `vendor` is protocol vendor, it is used as namespace in generated messages allowing to avoid conflict between protocols from different vendors if used in one application.
 `protocol` is protocol name, each protocol has protocol ID, that allows to use multiple protocols on single connection, e.g. bootloader and application protocols.
 
+The protocol directory holds a `_protocol.yaml` describing the protocol itself:
+
+```yaml
+proto_id: 1
+generate_protocol_version: true   # optional, defaults to true
+```
+
+`generate_protocol_version` controls the version stamp - an md5 over the protocol's own message set,
+truncated to six hex digits - that C++, JSON and Markdown outputs carry (`PROTO_VERSION` and
+`ProtoInfo::VERSION`, `version.json`, the `Version` line). Set it to false where the peers agree on
+their wire format by other means, such as a hand-written constant or a copied message-id registry:
+the hash covers field names, so a pure rename moves the stamp even though no byte on the wire moves,
+and a stamp nobody checks reads as a protocol event to everyone who greps for it. Stating the default
+explicitly does not move the stamp - the key is excluded from the hash.
+
 Message generator usage:
 ```
 python3 generate.py -b <base_dir> -m <vendor>/<protocol> -l <lang> -o <out_dir> [-D variable=value]

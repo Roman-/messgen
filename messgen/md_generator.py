@@ -1,4 +1,5 @@
 import os
+from messgen.parser import GENERATE_PROTOCOL_VERSION
 from messgen.version_protocol import VersionProtocol
 
 
@@ -77,7 +78,10 @@ class MdGenerator:
             dict_max_len = self.get_max_length_by_key("descr", module["messages"], len("comment"))
 
             dts.append("# %s" % (module_name))
-            dts.append("\nVersion %s\n" % VersionProtocol(module).generate())
+            if module[GENERATE_PROTOCOL_VERSION]:
+                dts.append("\nVersion %s\n" % VersionProtocol(module).generate())
+            else:
+                dts.append("")
             dts.append(
                 "| %s | %s | %s |"
                 % (
