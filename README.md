@@ -116,3 +116,15 @@ Example for protocol documentation generation:
 ```
 python3 generate.py -b ./base_dir -m my_vendor/my_protocol -l md -o out/md
 ```
+
+#### Protocol version only
+
+To get the version stamp without generating anything, pass `--print-version` in place of `-l`:
+
+```
+python3 generate.py -b ./base_dir -m my_vendor/my_protocol --print-version
+```
+
+It prints the six hex digits the generators would emit, one line per module in `-m` order, and
+writes no files. A module with `generate_protocol_version: false` has no version, so naming one
+fails the call before anything is printed.

@@ -6,7 +6,8 @@ from messgen.go_generator import GoGenerator
 from messgen.json_generator import JsonGenerator
 from messgen.ts_generator import TsGenerator
 from messgen.md_generator import MdGenerator
-from messgen.parser import load_modules
+from messgen.parser import load_modules, GENERATE_PROTOCOL_VERSION
+from messgen.version_protocol import VersionProtocol
 from messgen.cpp_generator import CppGenerator
 from messgen.data_types_preprocessor import DataTypesPreprocessor
 from messgen import MessgenException
@@ -44,8 +45,12 @@ def main():
                         help='Message definition base directories')
     parser.add_argument("-m", "--modules", required=True, type=str, nargs="+", help='Modules')
     parser.add_argument("-o", "--outdir", type=str, help='Output directory', default=".")
-    parser.add_argument("-l", "--lang", required=True, type=str,
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("-l", "--lang", type=str,
                         help='Output language (cpp=C++, go=Golang, js=JavaScript, md=Markdown)')
+    action.add_argument("--print-version", action="store_true",
+                        help='Print each module\'s protocol version, one per line in --modules order, '
+                             'and generate nothing')
     parser.add_argument("-D", "--define", action='append', help="Define variables in 'key=value' format")
 
     args = parser.parse_args()
@@ -64,6 +69,18 @@ def main():
 
         data_types_preprocessor = DataTypesPreprocessor(PLAIN_TYPES, SPECIAL_TYPES)
         data_types_map = data_types_preprocessor.create_types_map(modules_map)
+
+        # The hash covers the fields the preprocessor adds to each module, so this cannot skip it.
+        # Every module is checked before anything is printed: a caller reading the lines by
+        # position must not get a partial list that it could mistake for the whole.
+        if args.print_version:
+            for module_name, module in modules_map.items():
+                if not module[GENERATE_PROTOCOL_VERSION]:
+                    raise MessgenException("Module %s sets %s: false, so it has no version" %
+                                           (module_name, GENERATE_PROTOCOL_VERSION))
+            for module in modules_map.values():
+                print(VersionProtocol(module).generate())
+            return
 
         g_type = generators.get(args.lang)
         if g_type is None:
