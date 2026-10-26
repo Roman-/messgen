@@ -121,6 +121,22 @@ protected:
         serialize_and_assert_to_vec(msg, _ser_buf);
     }
 
+    // Each prefix is parsed from a buffer of exactly its own length, so a sanitized build also catches
+    // a read past the end
+    template <class T>
+    void assert_every_truncation_rejected(const T & msg) {
+        serialize_and_assert(msg);
+
+        messgen::MessageInfo msg_info{};
+        ASSERT_EQ(messgen::stl::get_message_info(_ser_buf, msg_info), OK);
+
+        for (uint32_t len = 0; len < msg_info.size; ++len) {
+            const std::vector<uint8_t> prefix(msg_info.payload, msg_info.payload + len);
+            T parsed{};
+            ASSERT_EQ(parsed.parse_msg(prefix.data(), len, _messgen_alloc), -1) << "payload cut to " << len << " bytes";
+        }
+    }
+
     messgen::msgs::messgen_test::simple_dynamic_message gen_random_simple_dynamic_msg() {
         messgen::msgs::messgen_test::simple_dynamic_message msg{};
         msg.f0 = gen_random_plain_dynamic_field<uint64_t>();
@@ -468,4 +484,34 @@ TEST_F(TestMessgen, StorageParseTest) {
 
     // Validate that buffer is empty
     ASSERT_EQ(_ser_buf.size(), 0);
+}
+
+TEST_F(TestMessgen, TruncatedPlainDynamicArraysAreRejected) {
+    using namespace messgen::msgs::messgen_test;
+
+    const int64_t i64[] = {-1, 2};
+    const uint64_t u64[] = {3, 4};
+    const int32_t i32[] = {-5, 6};
+    const uint32_t u32[] = {7, 8};
+    const int16_t i16[] = {-9, 10};
+    const uint16_t u16[] = {11, 12};
+    const int8_t i8[] = {-13, 14};
+    const uint8_t u8[] = {15, 16};
+
+    typed_array_dynamic_message msg{};
+    msg.type_Char = 'c';
+    msg.type_Int64 = messgen::make_dynamic(i64);
+    msg.type_Uint64 = messgen::make_dynamic(u64);
+    msg.type_Int32 = messgen::make_dynamic(i32);
+    msg.type_Uint32 = messgen::make_dynamic(u32);
+    msg.type_Int16 = messgen::make_dynamic(i16);
+    msg.type_Uint16 = messgen::make_dynamic(u16);
+    msg.type_Int8 = messgen::make_dynamic(i8);
+    msg.type_Uint8 = messgen::make_dynamic(u8);
+
+    assert_every_truncation_rejected(msg);
+}
+
+TEST_F(TestMessgen, TruncatedEmbeddedDynamicMessageIsRejected) {
+    assert_every_truncation_rejected(_embedded_dyn_d1_msg);
 }
