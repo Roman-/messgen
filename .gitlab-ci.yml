@@ -1,0 +1,9 @@
+# radix's fork of messgen v0 lives on GitHub, which never runs this file: radix-software's
+# ci/sh/run_submodule_ci.py runs it from its local pipeline whenever the fork's gitlink or tree changes.
+test:
+  tags:
+    - radix
+  image: harbor.alberblanc.io/alberblanc/radix-builder-22.04:shellcheck
+  script:
+    - apt-get update -qq && apt-get install -y -qq libgtest-dev
+    - make -C tests
