@@ -15,6 +15,20 @@ EXISTING_TYPES_FILE = "_types" + CONFIG_EXT
 # everyone who greps for the version. Setting it false drops the stamp from every generator.
 GENERATE_PROTOCOL_VERSION = "generate_protocol_version"
 
+# Opt-in key in PROTOCOL_FILE. The generated code reorders each message's fields
+# (DataTypesPreprocessor.__sort_fields) and puts them on the wire in that order, so a peer that
+# reads the yaml in declaration order - messgen v1 does - gets another layout unless the yaml
+# already declares the generated one. Setting it true fails generation for any message of the
+# module that declares its fields in another order.
+CHECK_FIELD_ORDER = "check_field_order"
+
+
+def _load_flag(protocol, key, default, path):
+    value = protocol.get(key, default)
+    if not isinstance(value, bool):
+        raise MessgenException("%s must be true or false in %s, got '%s'" % (key, path, value))
+    return value
+
 
 def load_modules(basedirs, modules):
     modules_map = {}
@@ -27,6 +41,7 @@ def load_modules(basedirs, modules):
         # proto_id of the module parsed before it.
         proto_id = None
         generate_protocol_version = True
+        check_field_order = False
         paths_checked = []
         for basedir in basedirs:
             module_path = basedir + os.path.sep + module_name
@@ -49,12 +64,9 @@ def load_modules(basedirs, modules):
                                 raise MessgenException("Missing proto id field")
 
                             proto_id = msg["proto_id"]
-                            generate_protocol_version = msg.get(GENERATE_PROTOCOL_VERSION, True)
-
-                            if not isinstance(generate_protocol_version, bool):
-                                raise MessgenException(
-                                    "%s must be true or false in %s, got '%s'" %
-                                    (GENERATE_PROTOCOL_VERSION, msg_file_path, generate_protocol_version))
+                            generate_protocol_version = _load_flag(msg, GENERATE_PROTOCOL_VERSION, True,
+                                                                   msg_file_path)
+                            check_field_order = _load_flag(msg, CHECK_FIELD_ORDER, False, msg_file_path)
 
                             for existing_mod_name, existing_mod in modules_map.items():
                                 if existing_mod["proto_id"] == proto_id:
@@ -94,6 +106,7 @@ def load_modules(basedirs, modules):
         modules_map[module_name] = {
             "proto_id": proto_id,
             GENERATE_PROTOCOL_VERSION: generate_protocol_version,
+            CHECK_FIELD_ORDER: check_field_order,
             "constants": module_constants,
             "existing_types": module_existing_types,
             "messages": list(

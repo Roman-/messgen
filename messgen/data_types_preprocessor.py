@@ -1,5 +1,6 @@
 from .utils import remove_array, get_module_name, get_array_size, is_dynamic, is_array
 from .messgen_ex import MessgenException
+from .parser import CHECK_FIELD_ORDER
 
 
 class DataTypesPreprocessor:
@@ -59,6 +60,11 @@ class DataTypesPreprocessor:
         """
         self.__create_lookup_messages_set(modules_map)
         self.__load_constants(modules_map)
+        # Read before any message loads: loading replaces a message's fields with the sorted list,
+        # and a message can load early as the field type of another module's message.
+        declared_orders = [(module_name, message, [field["name"] for field in message.get("fields") or []])
+                           for module_name, module in modules_map.items() if module[CHECK_FIELD_ORDER]
+                           for message in module["messages"]]
 
         for module_name, module in modules_map.items():
             module_ns = DataTypesPreprocessor.__create_namespace(module_name)
@@ -82,7 +88,23 @@ class DataTypesPreprocessor:
 
             module["max_datatype_size"] = max_datatype_size
 
+        self.__check_field_order(declared_orders)
+
         return self._types_map
+
+    @staticmethod
+    def __check_field_order(declared_orders):
+        mismatches = []
+        for module_name, message, declared in declared_orders:
+            generated = [field["name"] for field in message["fields"]]
+            if generated != declared:
+                mismatches.append("  %s/%s: %s" % (module_name, message["name"], ", ".join(generated)))
+
+        if mismatches:
+            raise MessgenException(
+                "%s is set, and %d message(s) declare fields out of the generated order, which is the "
+                "order on the wire. Declare them in this order:\n%s" %
+                (CHECK_FIELD_ORDER, len(mismatches), "\n".join(mismatches)))
 
     def __create_lookup_messages_set(self, modules_map):
         for module_name, module in modules_map.items():

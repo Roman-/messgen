@@ -12,7 +12,9 @@ import json
 #   "generate_protocol_version" - says whether the stamp is emitted at all, not what
 #                         the peers put on the wire. Spelling out the default in a
 #                         _protocol.yaml must leave the stamp where it was.
-IGNORED_KEYS = frozenset(("descr", "max_datatype_size", "generate_protocol_version"))
+#   "check_field_order" - can fail generation but never changes its output, so turning
+#                         it on is not a protocol change.
+IGNORED_KEYS = frozenset(("descr", "max_datatype_size", "generate_protocol_version", "check_field_order"))
 
 
 def _sanitize(obj):

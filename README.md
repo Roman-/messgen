@@ -48,6 +48,7 @@ The protocol directory holds a `_protocol.yaml` describing the protocol itself:
 ```yaml
 proto_id: 1
 generate_protocol_version: true   # optional, defaults to true
+check_field_order: false          # optional, defaults to false
 ```
 
 `generate_protocol_version` controls the version stamp - an md5 over the protocol's own message set,
@@ -57,6 +58,13 @@ their wire format by other means, such as a hand-written constant or a copied me
 the hash covers field names, so a pure rename moves the stamp even though no byte on the wire moves,
 and a stamp nobody checks reads as a protocol event to everyone who greps for it. Stating the default
 explicitly does not move the stamp - the key is excluded from the hash.
+
+The generated code does not keep the yaml field order: it puts plain scalars first, then nested
+messages, then dynamic fields (strings and `T[]`), each group sorted by alignment descending, and
+serializes them in that order. A peer that reads the yaml in declaration order, as messgen v1 does,
+sees a different layout wherever the two orders differ. `check_field_order: true` makes generation
+fail for every message of the protocol whose yaml order differs from the generated one, and the error
+lists the order to declare. The key is excluded from the hash too.
 
 Message generator usage:
 ```
